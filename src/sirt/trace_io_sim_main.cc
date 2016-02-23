@@ -14,6 +14,7 @@ class TraceRuntimeConfig {
     int kNSinograms;
     int kNColumns;
     std::string kReconOutputPath;
+    int kMPIOXferFlag;
 
     TraceRuntimeConfig(int argc, char **argv, int rank, int size){
       try
@@ -29,7 +30,16 @@ class TraceRuntimeConfig {
           "o", "reconOutputPath", "Output file path for reconstructed image (hdf5)",
           true, "", "string");
 
+        std::vector<int> allowed_xfer_flags_vals;
+        allowed_xfer_flags_vals.push_back(0);
+        allowed_xfer_flags_vals.push_back(1);
+        TCLAP::ValuesConstraint<int> allowed_xfer_flags(allowed_xfer_flags_vals);
+        TCLAP::ValueArg<int> argMPIOXferFlag(
+          "x", "mpioXferFlag", "MPI-IO transfer flag (Independent=0, Collective=1)",
+          true, 1, &allowed_xfer_flags);
+
         cmd.add(argReconOutputPath);
+        cmd.add(argMPIOXferFlag);
         cmd.add(argNColumns);
         cmd.add(argNSinograms);
         cmd.add(argNProjections);
@@ -39,6 +49,7 @@ class TraceRuntimeConfig {
         kNSinograms = argNSinograms.getValue();
         kNColumns = argNColumns.getValue();
         kReconOutputPath = argReconOutputPath.getValue();
+        kMPIOXferFlag = argMPIOXferFlag.getValue();
 
         if(rank==0)
         {
@@ -47,6 +58,7 @@ class TraceRuntimeConfig {
           std::cout << "Number of sinograms=" << kNSinograms << std::endl;
           std::cout << "Number of columns=" << kNColumns << std::endl;
           std::cout << "Output file path=" << kReconOutputPath << std::endl;
+          std::cout << "MPI-IO transfer flag (Independent=0, Collective=1)=" << kMPIOXferFlag << std::endl;
         }
       }
       catch (TCLAP::ArgException &e)
@@ -176,11 +188,14 @@ int main(int argc, char **argv)
   };
 
   /* Write reconstructed data to disk */
+  H5FD_mpio_xfer_t mpio_xfer_flag = (config.kMPIOXferFlag==0) ? 
+    H5FD_MPIO_INDEPENDENT : H5FD_MPIO_COLLECTIVE;
   auto write_beg_time = std::chrono::high_resolution_clock::now();
   trace_io::WriteRecon(
       trace_metadata, d_metadata, 
       config.kReconOutputPath, 
-      "/recon");
+      "/recon",
+      mpio_xfer_flag);
   std::chrono::duration<double> write_time = 
     std::chrono::high_resolution_clock::now()-write_beg_time; 
 

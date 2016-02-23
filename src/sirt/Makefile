@@ -11,7 +11,7 @@ DISPDIR = ${DISP_HOME}/src/core
 
 # Flags
 CFLAGS = -std=c++11 -O3 -Wall -Wextra 
-CFLAGS += -g -fPIC -DTIMERON
+CFLAGS += -g -fPIC
 
 # Common data structures and utilities classes
 COMMONDIR = ${ROOTDIR}/src/common

@@ -372,7 +372,7 @@ void trace_io::WriteData(
     hsize_t dataset_ndims, hsize_t *dataset_dims, /* Dataset dimension values */
     int target_dim,
     char const *file_name, char const *dataset_name,
-    MPI_Comm comm, MPI_Info info)
+    MPI_Comm comm, MPI_Info info, H5FD_mpio_xfer_t mpio_xfer_flag)
 { 
   if(ndims!=3 || recon==NULL || file_name==NULL || dataset_name==NULL)
     throw std::runtime_error("Wrong input parameter is passed");
@@ -440,7 +440,7 @@ void trace_io::WriteData(
 
   /* Create property list for collective dataset write */
   plist_id = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+  H5Pset_dxpl_mpio(plist_id, mpio_xfer_flag);
 
   H5Dwrite(dset_id, H5T_NATIVE_FLOAT, memspace, filespace,
       plist_id, recon);
@@ -457,10 +457,25 @@ void trace_io::WriteData(
 }
 
 void trace_io::WriteRecon(
-    TraceMetadata &rank_metadata, /// This rank's in memory data
-    H5Metadata &dataset_metadata, /// Metadata of all dataset
-    std::string const output_path,     /// Output file path
-    std::string const dataset_path)    /// Dataset path in output file
+    TraceMetadata &rank_metadata,
+    H5Metadata &dataset_metadata,
+    std::string const output_path,
+    std::string const dataset_path)
+{
+  WriteRecon(
+     rank_metadata,
+     dataset_metadata,
+     output_path,
+     dataset_path,
+     H5FD_MPIO_COLLECTIVE);   /// Default transfer type is collective IO
+}
+
+void trace_io::WriteRecon(
+    TraceMetadata &rank_metadata,
+    H5Metadata &dataset_metadata, 
+    std::string const output_path, 
+    std::string const dataset_path,
+    H5FD_mpio_xfer_t mpio_xfer_flag)
 {
   hsize_t ndims = static_cast<hsize_t>(dataset_metadata.ndims);
   hsize_t rank_dims[3] = {
@@ -484,5 +499,5 @@ void trace_io::WriteRecon(
       ndims, app_dims,
       0,
       output_path.c_str(), dataset_path.c_str(),
-      MPI_COMM_WORLD, MPI_INFO_NULL);
+      MPI_COMM_WORLD, MPI_INFO_NULL, mpio_xfer_flag);
 }
