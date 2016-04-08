@@ -107,12 +107,13 @@ class TDataMock
       // delete [] theta_;
     }
 
-    void GenParData(float val)
+    void GenParData(float val, int rank)
     {
       for(int i=0; i<num_projs_; ++i)
         for(int j=0; j<num_slices_; ++j)
           for(int k=0; k<num_cols_; ++k)
-            data_[i*num_slices_*num_cols_+j*num_cols_+k] = val;
+            data_[i*num_slices_*num_cols_+j*num_cols_+k] = 
+              rank + i*num_slices_*num_cols_ + j*num_cols_ +k;
     }
     void GenProjTheta(float beg, float end)
     {
@@ -154,8 +155,8 @@ int main(int argc, char **argv)
       n_blocks,               /// Number of sinograms
       config.kNColumns,       /// Number of columns
       0, 1);                  /// Iteration and thread counts
-  mock_data.GenParData(0.);
-  mock_data.GenProjTheta(0., 180.);
+  mock_data.GenParData(0., comm->rank());
+  mock_data.GenProjTheta(0., 360.);
   std::chrono::duration<double> dg_time = 
     std::chrono::high_resolution_clock::now()-dg_beg_time; 
 
@@ -174,6 +175,10 @@ int main(int argc, char **argv)
       mock_data.num_cols(),                     /// int const num_cols,
       mock_data.num_cols(),                     /// int const num_grids,
       0.);                                      /// float const center
+
+  auto &recon = trace_metadata.recon();
+  for(size_t i=0; i<recon.count(); i++)
+    recon[i]=comm->rank()+i;
 
   /* Setup output file metadata */
   trace_io::H5Metadata d_metadata = {
@@ -205,5 +210,7 @@ int main(int argc, char **argv)
   std::cout << "Write time=" << write_time.count() <<
     "; Total time=" << tot_time.count() <<
     "; Data Generation time=" << dg_time.count() << std::endl;
+
+  delete comm;
 }
 

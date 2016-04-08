@@ -38,6 +38,11 @@ namespace trace_io {
   H5Data* ReadProjections(H5Metadata *metadata_p,
       int beg_projection, int count, int filter_id);
 
+  void WriteRawData( 
+      float *recon, /* Data values */ 
+      hsize_t ndims, hsize_t *dims,
+      int target_dim);
+
   void WriteData(
       float *recon, /* Data values */
       hsize_t ndims, hsize_t *dims, /* This process' dimension values */
