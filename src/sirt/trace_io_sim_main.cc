@@ -28,7 +28,7 @@ class TraceRuntimeConfig {
           "c", "nColumns", "Number of columns", true, 0, "int");
         TCLAP::ValueArg<std::string> argReconOutputPath(
           "o", "reconOutputPath", "Output file path for reconstructed image (hdf5)",
-          true, "", "string");
+          false, "output.h5", "string");
 
         std::vector<int> allowed_xfer_flags_vals;
         allowed_xfer_flags_vals.push_back(0);
