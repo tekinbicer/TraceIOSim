@@ -1,6 +1,7 @@
 #include <string>
 #include <stdexcept>
 #include <stdlib.h>
+#include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include "mpi.h"
@@ -370,18 +371,26 @@ trace_io::H5Data* trace_io::ReadProjections(H5Metadata *metadata_p,
 void trace_io::WriteRawData(
     float *recon, /* Data values */
     hsize_t ndims, hsize_t *dims, /* Dataset dimension values */
-    int target_dim)
+    int target_dim,
+    std::string const &output_path)
 { 
   std::string filename = 
+    output_path + "-" +
     std::to_string(target_dim) + "-" + 
     std::to_string(target_dim+dims[0]) + ".slice";
 
-  std::ofstream f(filename, std::ios::binary | std::ios::out);
+  FILE *f = fopen(filename.c_str(), "wb");
+  //std::ofstream f(filename, std::ios::binary | std::ios::out);
   unsigned char *buf = reinterpret_cast<unsigned char*>(recon);
 
-  std::copy(
-      buf, buf+sizeof(*recon)*dims[0]*dims[1]*dims[2],
-      std::ostream_iterator<unsigned char>(f, ""));
+  fwrite(buf, sizeof(*buf), sizeof(*recon)*dims[0]*dims[1]*dims[2], f);
+
+  /// XXX: For some reason, below code is much more slower than fwrite
+  //std::copy(
+  //    buf, buf+sizeof(*recon)*dims[0]*dims[1]*dims[2],
+  //    std::ostream_iterator<unsigned char>(f, ""));
+
+  fclose(f);
 }
 
 
@@ -523,5 +532,6 @@ void trace_io::WriteRecon(
   WriteRawData(
       &recon[recon_slice_data_index],
       ndims, rank_dims,
-      rank_metadata.slice_id());
+      rank_metadata.slice_id(),
+      output_path);
 }

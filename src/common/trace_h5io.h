@@ -41,7 +41,8 @@ namespace trace_io {
   void WriteRawData( 
       float *recon, /* Data values */ 
       hsize_t ndims, hsize_t *dims,
-      int target_dim);
+      int target_dim,
+      std::string const &output_path);
 
   void WriteData(
       float *recon, /* Data values */
